@@ -23,6 +23,10 @@ public:
 
     void load_sna(const QString& filename);
 
+    void save_z80(const QString &filename);
+
+    void load_z80(const QString &filename);
+
     void keyPressed(int sc);
 
     void keyReleased(int sc);
@@ -85,6 +89,10 @@ private slots:
     void on_actionE_xit_triggered();
 
     void on_actionAbout_triggered();
+
+    void on_actionSave_a_snapshot_triggered();
+
+    void on_action_Load_a_snapshot_triggered();
 
 private:
     Ui::MainWindow *ui;

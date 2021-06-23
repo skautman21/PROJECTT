@@ -17,8 +17,13 @@ public:
 
     virtual const uint8_t * framebuffer() const {return ram.getBuffer(16384); }
 
-private:
-    ROMDevice rom { "rom/48.rom" };
+protected:
+#if defined (WIN32)
+    ROMDevice rom {"rom/48.rom"};
+#endif
+#if defined (Q_OS_ANDROID)
+    ROMDevice rom {"assets:rom/48.rom"};
+#endif
     RAMDevice ram { 16 };
 };
 

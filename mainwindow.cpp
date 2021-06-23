@@ -13,7 +13,7 @@
 enum {
     CURSOR_IF = 0,
     KEMPSTON_IF = 1,
-    ZXINTERFACE2_IF = 2,
+    ZXINTERFACE2 = 2,
 };
 
 #if defined (WIN32)
@@ -40,6 +40,12 @@ static constexpr int DOWN_SCANCODE = 116;
 static constexpr int LEFT_SCANCODE = 113;
 static constexpr int RIGHT_SCANCODE = 114;
 static constexpr int LCTRL_SCANCODE = 37;
+static constexpr int UP_SCANCODE_W = 17;
+static constexpr int DOWN_SCANCODE_S = 31;
+static constexpr int LEFT_SCANCODE_A = 30;
+static constexpr int RIGHT_SCANCODE_D = 32;
+static constexpr int RCTRL_SCANCODE = 285;
+static constexpr int SPACE_SCANCODE = 57;
 #endif
 
 static constexpr int PAIR(int a, int b) { return a * 100 + b; }
@@ -211,6 +217,29 @@ MainWindow::~MainWindow()
 }
 
 #pragma pack(push, 1)
+struct Z80Header
+{
+    uint16_t    AF;
+    uint16_t    BC;
+    uint16_t    HL;
+    uint16_t    PC;
+    uint16_t    SP;
+    uint8_t     I, R;
+    uint8_t     BDR;
+    uint16_t    DE;
+    uint16_t    BC_;
+    uint16_t    DE_;
+    uint16_t    HL_;
+    uint16_t    AF_;
+    uint16_t    IY;
+    uint16_t    IX;
+    uint8_t     IFF1;
+    uint8_t     IFF2;
+    uint8_t     IM;
+};
+#pragma pack(pop)
+
+#pragma pack(push, 1)
 struct SNAHeader
 {
     uint8_t     I;
@@ -259,12 +288,132 @@ void MainWindow::load_sna(const QString &filename)
     }
 }
 
+void MainWindow::save_z80(const QString &filename)
+{
+    Z80Header z80_hdr;
+    QFile z80(filename);
+    QByteArray buffer;
+
+    if (z80.open(QIODevice::WriteOnly)){
+        z80_hdr.AF = cpustate.state.af.value_uint16;
+        z80_hdr.BC = cpustate.state.bc.value_uint16;
+        z80_hdr.HL = cpustate.state.hl.value_uint16;
+        z80_hdr.PC = cpustate.state.pc;
+        z80_hdr.SP = cpustate.state.sp;
+        z80_hdr.I  = cpustate.state.i;
+        z80_hdr.R  = cpustate.state.r;
+
+        z80_hdr.DE  = cpustate.state.de.value_uint16;
+        z80_hdr.BC_ = cpustate.state.bc_.value_uint16;
+        z80_hdr.DE_ = cpustate.state.de_.value_uint16;
+        z80_hdr.HL_ = cpustate.state.hl_.value_uint16;
+        z80_hdr.AF_ = cpustate.state.af_.value_uint16;
+        z80_hdr.IY  = cpustate.state.iy.value_uint16;
+        z80_hdr.IX  = cpustate.state.ix.value_uint16;
+        z80_hdr.IFF1= cpustate.state.internal.iff1;
+        z80_hdr.IFF2= cpustate.state.internal.iff2;
+        z80_hdr.IM  = cpustate.state.internal.im;
+        z80_hdr.BDR = bus->border() << 1;
+
+        z80.write(reinterpret_cast<const char *>(&z80_hdr), sizeof (z80_hdr));
+        for (int off = 0; off < 49152; ++ off) {
+            buffer.append(bus->mem_read8(16384 + off));
+        }
+        z80.write(buffer);
+        z80.close();
+    }
+}
+
+void MainWindow::load_z80(const QString &filename)
+{
+    QFile z80(filename);
+
+    if (z80.open(QIODevice::ReadOnly)){
+        QByteArray buffer;
+        buffer = z80.readAll();
+        Z80Header * z80_hdr = reinterpret_cast<Z80Header *>(buffer.data());
+        uint8_t * z80_mem   = reinterpret_cast<uint8_t *>(buffer.data()) + sizeof (Z80Header);
+
+        if (z80_hdr->BDR == 0xff) z80_hdr->BDR = 0x01;
+
+        cpustate.state.af.value_uint16  = z80_hdr->AF;
+        cpustate.state.bc.value_uint16  = z80_hdr->BC;
+        cpustate.state.hl.value_uint16  = z80_hdr->HL;
+        cpustate.state.pc               = z80_hdr->PC;
+        cpustate.state.sp               = z80_hdr->SP;
+        cpustate.state.i                = z80_hdr->I;
+        cpustate.state.r                = (z80_hdr->R & 0x7f) | ((z80_hdr->BDR & 0x01) << 7);
+
+        cpustate.state.de.value_uint16  = z80_hdr->DE;
+        cpustate.state.bc_.value_uint16 = z80_hdr->BC_;
+        cpustate.state.de_.value_uint16 = z80_hdr->DE_;
+        cpustate.state.hl_.value_uint16 = z80_hdr->HL_;
+        cpustate.state.af_.value_uint16 = z80_hdr->AF_;
+        cpustate.state.iy.value_uint16  = z80_hdr->IY;
+        cpustate.state.ix.value_uint16  = z80_hdr->IX;
+        cpustate.state.internal.iff1    = z80_hdr->IFF1;
+        cpustate.state.internal.iff2    = z80_hdr->IFF2;
+        cpustate.state.internal.im      = z80_hdr->IM & 0x03;
+
+        bus->io_write8(0xfe, (z80_hdr->BDR >> 1) & 0x07);
+
+        if(z80_hdr->BDR & 0x20){
+            QByteArray data;
+            int state = 0;
+            uint8_t *ptr = z80_mem;
+            int count = buffer.size() - sizeof(Z80Header);
+            unsigned reps = 0;
+
+            while (count--) {
+                uint8_t byte = *(ptr++);
+                if (state == 0 && byte == 0xed)
+                {
+                    state = 1; continue;
+                }
+                if (state == 0){
+                    data.append(byte); continue;
+                }
+
+
+
+                if (state == 1 && byte == 0xed) {
+                    state = 2; continue;
+                }
+
+                if (state == 1) {
+                    data.append(0xed);
+                    data.append(byte);
+                    state = 0; continue;
+                }
+
+                if (state == 2 && byte == 0x00)
+                {
+                    break;
+                }
+                if (state == 2) {
+                    reps = byte;
+                    state = 3; continue;
+                }
+                while (reps--) data.append(byte);
+                state = 0;
+            }
+            for (int off = 0; off < 49152; ++ off) {
+                bus->mem_write8(16384 + off, data[off]);
+            }
+        } else {
+            for (int off = 0; off < 49152; ++ off) {
+                bus->mem_write8(16384 + off, z80_mem[off]);
+            }
+        }
+    }
+}
+
 void MainWindow::upPressed(bool PlayerS)
 {
     switch (ui->cbJoystickInterface->currentIndex()) {
     case CURSOR_IF: bus->key_press(3, 12);break;
     case KEMPSTON_IF: bus->kj_button_press(PORT1F::KJ_UP);break;
-    case ZXINTERFACE2_IF: if (PlayerS) bus->key_press(3, 11); else bus->key_press(1,12);break;
+    case ZXINTERFACE2: if (PlayerS) bus->key_press(3, 11); else bus->key_press(1,12);break;
     }
 }
 
@@ -273,7 +422,8 @@ void MainWindow::downPressed(bool PlayerS)
     switch (ui->cbJoystickInterface->currentIndex()) {
     case CURSOR_IF: bus->key_press(4, 12);break;
     case KEMPSTON_IF: bus->kj_button_press(PORT1F::KJ_DOWN);break;
-    case ZXINTERFACE2_IF: if (PlayerS) bus->key_press(2, 11); else bus->key_press(2,12);break;
+    case ZXINTERFACE2
+    : if (PlayerS) bus->key_press(2, 11); else bus->key_press(2,12);break;
     }
 }
 
@@ -282,7 +432,8 @@ void MainWindow::leftPressed(bool PlayerS)
     switch (ui->cbJoystickInterface->currentIndex()) {
     case CURSOR_IF: bus->key_press(4, 11);break;
     case KEMPSTON_IF: bus->kj_button_press(PORT1F::KJ_LEFT);break;
-    case ZXINTERFACE2_IF: if (PlayerS) bus->key_press(0, 11); else bus->key_press(4,12);break;
+    case ZXINTERFACE2
+    : if (PlayerS) bus->key_press(0, 11); else bus->key_press(4,12);break;
     }
 }
 
@@ -291,7 +442,7 @@ void MainWindow::rightPressed(bool PlayerS)
     switch (ui->cbJoystickInterface->currentIndex()) {
     case CURSOR_IF: bus->key_press(2, 12);break;
     case KEMPSTON_IF: bus->kj_button_press(PORT1F::KJ_RIGHT);break;
-    case ZXINTERFACE2_IF: if (PlayerS) bus->key_press(1, 11); else bus->key_press(3,12);break;
+    case ZXINTERFACE2: if (PlayerS) bus->key_press(1, 11); else bus->key_press(3,12);break;
     }
 }
 
@@ -300,7 +451,7 @@ void MainWindow::firePressed(bool PlayerS)
     switch (ui->cbJoystickInterface->currentIndex()) {
     case CURSOR_IF: bus->key_press(0, 12);break;
     case KEMPSTON_IF: bus->kj_button_press(PORT1F::KJ_FIRE);break;
-    case ZXINTERFACE2_IF: if (PlayerS) bus->key_press(4, 11); else bus->key_press(0,12);break;
+    case ZXINTERFACE2: if (PlayerS) bus->key_press(4, 11); else bus->key_press(0,12);break;
     }
 }
 
@@ -319,7 +470,7 @@ void MainWindow::upReleased(bool PlayerS)
     switch (ui->cbJoystickInterface->currentIndex()) {
     case CURSOR_IF: bus->key_release(3, 12);break;
     case KEMPSTON_IF: bus->kj_button_release(PORT1F::KJ_UP);break;
-    case ZXINTERFACE2_IF: if (PlayerS) bus->key_release(3, 11); else bus->key_release(1,12);break;
+    case ZXINTERFACE2: if (PlayerS) bus->key_release(3, 11); else bus->key_release(1,12);break;
     }
 }
 
@@ -328,7 +479,7 @@ void MainWindow::downReleased(bool PlayerS)
     switch (ui->cbJoystickInterface->currentIndex()) {
     case CURSOR_IF: bus->key_release(4, 12);break;
     case KEMPSTON_IF: bus->kj_button_release(PORT1F::KJ_DOWN);break;
-    case ZXINTERFACE2_IF: if (PlayerS) bus->key_release(2, 11); else bus->key_release(2,12);break;
+    case ZXINTERFACE2: if (PlayerS) bus->key_release(2, 11); else bus->key_release(2,12);break;
     }
 }
 
@@ -337,7 +488,7 @@ void MainWindow::leftReleased(bool PlayerS)
     switch (ui->cbJoystickInterface->currentIndex()) {
     case CURSOR_IF: bus->key_release(4, 11);break;
     case KEMPSTON_IF: bus->kj_button_release(PORT1F::KJ_LEFT);break;
-    case ZXINTERFACE2_IF: if (PlayerS) bus->key_release(0, 11); else bus->key_release(4,12);break;
+    case ZXINTERFACE2: if (PlayerS) bus->key_release(0, 11); else bus->key_release(4,12);break;
     }
 }
 
@@ -346,7 +497,7 @@ void MainWindow::rightReleased(bool PlayerS)
     switch (ui->cbJoystickInterface->currentIndex()) {
     case CURSOR_IF: bus->key_release(2, 12);break;
     case KEMPSTON_IF: bus->kj_button_release(PORT1F::KJ_RIGHT);break;
-    case ZXINTERFACE2_IF: if (PlayerS) bus->key_release(1, 11); else bus->key_release(3,12);break;
+    case ZXINTERFACE2: if (PlayerS) bus->key_release(1, 11); else bus->key_release(3,12);break;
     }
 }
 
@@ -355,7 +506,7 @@ void MainWindow::fireReleased(bool PlayerS)
     switch (ui->cbJoystickInterface->currentIndex()) {
     case CURSOR_IF: bus->key_release(0, 12);break;
     case KEMPSTON_IF: bus->kj_button_release(PORT1F::KJ_FIRE);break;
-    case ZXINTERFACE2_IF: if (PlayerS) bus->key_release(4, 11); else bus->key_release(0,12);break;
+    case ZXINTERFACE2: if (PlayerS) bus->key_release(4, 11); else bus->key_release(0,12);break;
     }
 }
 
@@ -396,8 +547,8 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
         case UP_SCANCODE_W:   upPressed(true);break;
         case DOWN_SCANCODE_S: downPressed(true);break;
         case LEFT_SCANCODE_A: leftPressed(true);break;
-        case RIGHT_SCANCODE_D:rightPressed(true);break;
-        case SPACE_SCANCODE:firePressed(true);break;
+        case RIGHT_SCANCODE_D: rightPressed(true);break;
+        case SPACE_SCANCODE: firePressed(true);break;
         default:            keyPressed(sc);
         }
     }
@@ -417,7 +568,7 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
         case DOWN_SCANCODE_S:  downReleased(true);break;
         case LEFT_SCANCODE_A:  leftReleased(true);break;
         case RIGHT_SCANCODE_D: rightReleased(true);break;
-        case SPACE_SCANCODE:   fireReleased(true);break;
+      case SPACE_SCANCODE:   fireReleased(true);break;
         default: keyReleased(sc);
         }
     }
@@ -563,5 +714,19 @@ void MainWindow::on_actionE_xit_triggered()
 void MainWindow::on_actionAbout_triggered()
 {
     QMessageBox::about(this, "About", "Это приложение было создано Артемием Крысиным");
+}
+
+
+void MainWindow::on_actionSave_a_snapshot_triggered()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, "Выберите папку и название файла", "", "*.z80");
+    save_z80(fileName);
+}
+
+
+void MainWindow::on_action_Load_a_snapshot_triggered()
+{
+    QString fileName = QFileDialog::getOpenFileName(this,"Выберите файл", "", "*.z80");
+    load_z80(fileName);
 }
 
