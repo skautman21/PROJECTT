@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1001</width>
+    <height>696</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="5" column="0" colspan="7">
+     <widget class="QTabWidget" name="twControls">
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>Keyboard</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="0" column="0">
+         <widget class="KeyboardWidget" name="keyboard" native="true"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="title">
+        <string>Joystick</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_2">
+        <item row="3" column="1">
+         <widget class="QPushButton" name="pbDown">
+          <property name="font">
+           <font>
+            <pointsize>24</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>↓</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <spacer name="verticalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="1">
+         <widget class="QPushButton" name="pbUp">
+          <property name="font">
+           <font>
+            <pointsize>24</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>↑</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="4">
+         <widget class="QPushButton" name="pbFire">
+          <property name="font">
+           <font>
+            <pointsize>24</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>@</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="QPushButton" name="pbRight">
+          <property name="font">
+           <font>
+            <pointsize>24</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>→</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="2" column="0">
+         <widget class="QPushButton" name="pbLeft">
+          <property name="font">
+           <font>
+            <pointsize>24</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>←</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="3">
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item row="0" column="0" colspan="7">
+     <widget class="ScreenWidget" name="screen" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QCheckBox" name="cbCaptureKeyboard">
+      <property name="text">
+       <string>CaptureKeyboard</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="6">
+     <widget class="QToolButton" name="btnReset">
+      <property name="text">
+       <string>Reset</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QCheckBox" name="cbShowControls">
+      <property name="text">
+       <string>Show controls</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="5">
+     <widget class="QPushButton" name="btnTest">
+      <property name="text">
+       <string>TEST</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="4">
+     <widget class="QComboBox" name="cbJoystickInterface">
+      <item>
+       <property name="text">
+        <string>Cursor Interface</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Kempston Interface</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>ZX Interface 2</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+    <item row="3" column="3">
+     <widget class="QComboBox" name="cbPalChange">
+      <item>
+       <property name="text">
+        <string>Palitra 1</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Palitra 2</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1001</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="actionSave_a_screenshot"/>
+    <addaction name="actionLoad_a_screenshot"/>
+    <addaction name="separator"/>
+    <addaction name="actionSave_a_snapshot"/>
+    <addaction name="action_Load_a_snapshot"/>
+    <addaction name="separator"/>
+    <addaction name="actionE_xit"/>
+   </widget>
+   <widget class="QMenu" name="menuMachine">
+    <property name="title">
+     <string>&amp;Machine</string>
+    </property>
+    <addaction name="actionReset"/>
+    <addaction name="actionNMI"/>
+    <addaction name="separator"/>
+    <addaction name="actionSpectrum_48k"/>
+    <addaction name="actionSpectrum_128k"/>
+   </widget>
+   <widget class="QMenu" name="menu_Help">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="menu"/>
+   <addaction name="menuMachine"/>
+   <addaction name="menu_Help"/>
+  </widget>
+  <action name="action_Load_a_snapshot">
+   <property name="text">
+    <string>&amp;Load a snapshot...</string>
+   </property>
+  </action>
+  <action name="actionE_xit">
+   <property name="text">
+    <string>E&amp;xit</string>
+   </property>
+  </action>
+  <action name="actionReset">
+   <property name="text">
+    <string>&amp;Reset</string>
+   </property>
+  </action>
+  <action name="actionNMI">
+   <property name="text">
+    <string>&amp;NMI</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>&amp;About...</string>
+   </property>
+  </action>
+  <action name="actionSpectrum_48k">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Spectrum 48k</string>
+   </property>
+  </action>
+  <action name="actionSpectrum_128k">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Spectrum 128k</string>
+   </property>
+  </action>
+  <action name="actionLoad_a_screenshot">
+   <property name="text">
+    <string>Load a screenshot...</string>
+   </property>
+  </action>
+  <action name="actionSave_a_screenshot">
+   <property name="text">
+    <string>Save a screenshot...</string>
+   </property>
+  </action>
+  <action name="actionSave_a_snapshot">
+   <property name="text">
+    <string>Save a snapshot...</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScreenWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">screenwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>KeyboardWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">keyboardwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
